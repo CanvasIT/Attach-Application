@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'Common_View/Registration.dart';
 
 void main() {
   runApp(const MyApp());
@@ -206,7 +207,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       WidgetSpan(
                         child: GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => const RegistrationScreen()),
+  );
+},
                           child: const Text('Sign Up',
                               style: TextStyle(
                                   fontSize: 14,
