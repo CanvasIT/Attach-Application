@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 
@@ -9,9 +10,17 @@ class StudentRegistrationScreen extends StatefulWidget {
 }
 
 class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
+
+  // Text editing controllers for the input fields
+final _nameCtrl = TextEditingController();
+final _emailCtrl = TextEditingController();
+final _passwordCtrl = TextEditingController();
+final _confirmPasswordCtrl = TextEditingController();
+final _majorCtrl = TextEditingController();
+
   bool _showPassword = false;
   bool _showConfirmPassword = false;
-  bool _showDob = false;
+  final bool _showDob = false;
 
   static const Color _navy = Color(0xFF1B2F72);
   static const Color _grey = Color(0xFFF2F2F2);
@@ -19,6 +28,43 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   static const Color _labelColor = Color(0xFF222222);
   static const Color _subtitleColor = Color(0xFFAAAAAA);
 
+  @override
+void dispose() {
+  // Dispose the controllers when the widget is removed from the widget tree
+  _nameCtrl.dispose();
+  _emailCtrl.dispose();
+  _passwordCtrl.dispose();
+  _confirmPasswordCtrl.dispose();
+  _majorCtrl.dispose();
+  super.dispose();
+}
+
+//async means that this function takes time to complete and we want to wait for it to finish
+//await means wait here for this operation to complete before moving on to the next line of code, if we don't use await, the function will return immediately and the user may not be created yet when we try to access the user data, so we want to make sure that the user is created before we do anything else
+//Future means that this function will return a value in the future, in this case it will return void when it is done, but it may take some time to complete because it needs to communicate with the firebase servers to create the user, so we want to use Future to indicate that this function is asynchronous and may take some time to complete
+//we used async, await, and Future to handle the asynchronous nature of the createUserWithEmailAndPassword function from the FirebaseAuth instance, which is used to create a new user with an email and password in Firebase Authentication. This function returns a Future that completes when the user creation process is finished, and we want to wait for it to complete before proceeding with any further actions, such as navigating to another screen or displaying a success message. By using async and await, we can write asynchronous code in a more readable and sequential manner, making it easier to understand the flow of the program.
+Future<void> createUserWithEmailAndPassword() async {
+  //try catch is used to handle any errors that may occur during the user creation process, such as weak passwords, email already in use, or any other issues that may arise when communicating with the firebase servers. By catching the FirebaseAuthException, we can provide feedback to the user about what went wrong and how to fix it, instead of just crashing the app or leaving the user confused about why their registration failed. We can also display a snackbar with a message to inform the user about the error and guide them on how to resolve it.
+  try{
+ final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+  email: _emailCtrl.text.trim(),
+   password: _passwordCtrl.text.trim(),
+   );
+   print(userCredential);
+  } //catch only catches exceptions of type FirebaseAuthException, which are specific to authentication errors that may occur when using Firebase Authentication. This allows us to handle authentication-related errors separately from other types of exceptions that may occur in the app, and provide more specific feedback to the user about what went wrong during the registration process.
+  on FirebaseAuthException catch (e) {
+    String message;
+    if (e.code == 'weak-password') {
+      message='The password provided is too weak.';
+    } else if (e.code == 'email-already-in-use') {
+      message='The account already exists for that email.';
+    } else {
+      message='something went wrong, please try again later.';
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+}
+
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,6 +115,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               // Full Name
               _buildLabel('Full Name'),
               _buildTextField(
+                controller: _nameCtrl,
                 hint: 'Fatima Matrook',
                 prefixIcon: Icons.person_outline,
               ),
@@ -78,6 +125,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               // Email
               _buildLabel('Email'),
               _buildTextField(
+                controller: _emailCtrl,
                 hint: 'example@gmail.com',
                 prefixIcon: Icons.mail_outline,
                 keyboardType: TextInputType.emailAddress,
@@ -88,6 +136,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               // Password
               _buildLabel('Password'),
               _buildTextField(
+                controller: _passwordCtrl,
                 hint: '••••••••••',
                 prefixIcon: Icons.lock_outline,
                 obscureText: !_showPassword,
@@ -106,6 +155,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               // Confirm Password
               _buildLabel('Confirm Password'),
               _buildTextField(
+                controller: _confirmPasswordCtrl,
                 hint: '••••••••••',
                 prefixIcon: Icons.lock_outline,
                 obscureText: !_showConfirmPassword,
@@ -139,6 +189,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               // Major
               _buildLabel('Major'),
               _buildTextField(
+                controller: _majorCtrl,
                 hint: '------------',
                 prefixIcon: Icons.person_outline,
               ),
@@ -159,7 +210,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () async{
+                    await createUserWithEmailAndPassword();
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _navy,
                     shape: RoundedRectangleBorder(
@@ -248,6 +301,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     );
   }
 
+
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -263,6 +317,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   }
 
   Widget _buildTextField({
+    //controller is optional because we may want to use the same text field widget for different fields, and not all of them may need a controller, for example, if we want to use the same text field widget for a read-only field that displays some information, we may not need a controller for that field, so we can make it optional and only provide it when we need it
+    //text editing controllers are used to control the text that is entered in the text field, we can use them to get the current value of the text field, or to set a new value for the text field, or to listen for changes in the text field, so they are useful for handling user input and updating the UI accordingly
+    TextEditingController? controller,
     required String hint,
     required IconData prefixIcon,
     bool obscureText = false,
@@ -277,6 +334,8 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
       ),
       child: TextField(
+        // we pass the controller to the text field, if it is provided, otherwise it will be null and the text field will manage its own state internally, this allows us to reuse this text field widget for different fields without having to create a separate controller for each one, and we can still access the text value when we need it by providing a controller when we use this widget
+        controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
         style: const TextStyle(fontSize: 14, color: Color(0xFF444444)),
